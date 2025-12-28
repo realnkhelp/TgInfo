@@ -6,17 +6,15 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 import base64
 
+app = Flask(__name__)
+
 # --- Configuration ---
 SECRET_SEED = "APIMPDS$9712Q"
 IV_STR = "AP4123IMPDS@12768F"
 API_URL = 'http://impds.nic.in/impdsmobileapi/api/getrationcard'
 TOKEN = "91f01a0a96c526d28e4d0c1189e80459"
 USER_AGENT = 'Dalvik/2.1.0 (Linux; U; Android 14; 22101320I Build/UKQ1.240624.001)'
-
-# ✅ API Access Key
 ACCESS_KEY = "paidchx"
-
-app = Flask(__name__)
 
 # --- Utility Functions ---
 def get_md5_hex(input_string: str) -> str:
@@ -50,11 +48,17 @@ def encrypt_payload(plaintext_id: str, session_id: str) -> str:
     
     return b64_double_encoded.decode('utf-8')
 
-# --- Flask Route (GET) ---
+# --- Routes ---
+
+# 1. HOME ROUTE (Ye 404 Error hatayega)
+@app.route('/')
+def home():
+    return jsonify({"status": "Online", "message": "Ration Card API is Running. Use /fetch endpoint."})
+
+# 2. FETCH ROUTE
 @app.route('/fetch', methods=['GET'])
 def fetch():
     try:
-        # ✅ Key Validation
         key = request.args.get("key", "").strip()
         if key != ACCESS_KEY:
             return jsonify({"error": "Invalid API key"}), 401
@@ -80,14 +84,11 @@ def fetch():
         }
 
         response = requests.post(API_URL, headers=headers, json=payload, timeout=15)
-
         return jsonify(response.json())
 
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": f"Network error: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
-# --- Run Server ---
+# Vercel requires the app to be exposed
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
